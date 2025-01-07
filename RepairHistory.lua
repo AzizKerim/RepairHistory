@@ -169,7 +169,6 @@ frame:SetScript("OnEvent", function(_, event, ...)
                 RepairHistoryCharDB.monthlyRepairCost = RepairHistoryCharDB.monthlyRepairCost + repairCost
                 RepairHistoryCharDB.lifetimeRepairCost = RepairHistoryCharDB.lifetimeRepairCost + repairCost
                 RepairHistoryDB.accountWideRepairCost = RepairHistoryDB.accountWideRepairCost + repairCost
-                print("|cFF00FF00You repaired your items for:|r " .. FormatMoneyWithIcons(repairCost))
                 C_Timer.After(1, function()
                 print("|cFF00FF00Daily Repair Total:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.dailyRepairCost))
             end )
@@ -189,9 +188,7 @@ function addon:ShowRepairData()
     print("|cFF00FF00===== Repair History|r [ " .. charName .. " ] |cFF00FF00=====|r")
     print("|cFFFFD700Daily Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.dailyRepairCost))
     print("|cFFFFD700Weekly Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.weeklyRepairCost))
-    -- print("|cFFFFD700Last Week's Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.previousWeekCost))
     print("|cFFFFD700Monthly Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.monthlyRepairCost))
-    -- print("|cFFFFD700Last Month's Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.previousMonthCost))
     print("|cFFFFD700Lifetime Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.lifetimeRepairCost))
     print("|cFFFFD700Account-Wide Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryDB.accountWideRepairCost))
 end
@@ -215,11 +212,9 @@ function addon:ShareRepairData()
     local headerText = "===== Repair History [ " .. charName .. " ] ====="
     local messages = {
         headerText,
-        "Daily Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.dailyRepairCost),
-        "Weekly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.weeklyRepairCost),
-            -- "Last Week: " .. FormatMoneyAsText(RepairHistoryCharDB.previousWeekCost),
+            "Daily Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.dailyRepairCost),
+            "Weekly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.weeklyRepairCost),
             "Monthly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.monthlyRepairCost),
-            -- "Last Month: " .. FormatMoneyAsText(RepairHistoryCharDB.previousMonthCost),
             "Lifetime: " .. FormatMoneyAsText(RepairHistoryCharDB.lifetimeRepairCost),
             "Account-Wide: " .. FormatMoneyAsText(RepairHistoryDB.accountWideRepairCost),
         }

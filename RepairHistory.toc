@@ -2,7 +2,7 @@
 ## Title: Repair History
 ## Notes: Tracks repair costs across characters and account-wide.
 ## Author: Aziz Kerim Koçk
-## Version: 0.0.1
+## Version: 0.1.0
 ## SavedVariables: RepairHistoryDB
 ## SavedVariablesPerCharacter: RepairHistoryCharDB
 
