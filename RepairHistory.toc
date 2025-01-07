@@ -1,0 +1,17 @@
+## Interface: 110007
+## Title: Repair History
+## Notes: Tracks repair costs across characters and account-wide.
+## Author: Aziz Kerim Koçk
+## Version: 0.0.1
+## SavedVariables: RepairHistoryDB
+## SavedVariablesPerCharacter: RepairHistoryCharDB
+
+# Libraries
+Libs\LibDBIcon-1.0\LibDBIcon-1.0\LibDBIcon-1.0.lua
+Libs\LibDBIcon-1.0\LibStub\LibStub.lua
+Libs\LibDBIcon-1.0\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\CallbackHandler-1.0\CallbackHandler-1.0.lua
+
+
+# Core files
+RepairHistory.lua
