@@ -81,6 +81,7 @@ function addon:OnInitialize()
             accountWideRepairCost = 0,
             minimapButton = {
                 hide = false,
+                locked = false,
             },
         }
     end
@@ -101,15 +102,34 @@ function addon:OnInitialize()
 
     -- Initialize minimap button
     LDBIcon:Register("RepairHistory", dataobj, RepairHistoryDB.minimapButton)
+    
+    -- Set initial lock state
+    if RepairHistoryDB.minimapButton.locked then
+        LDBIcon:Lock("RepairHistory")
+    else
+        LDBIcon:Unlock("RepairHistory")
+    end
+
     self:UpdateMinimapButton()
 end
 
--- Update minimap button visibility
 function addon:UpdateMinimapButton()
     if RepairHistoryDB.minimapButton.hide then
         LDBIcon:Hide("RepairHistory")
     else
         LDBIcon:Show("RepairHistory")
+    end
+end
+
+-- Helper function to toggle minimap button lock state
+function addon:ToggleMinimapLock()
+    RepairHistoryDB.minimapButton.locked = not RepairHistoryDB.minimapButton.locked
+    if RepairHistoryDB.minimapButton.locked then
+        LDBIcon:Lock("RepairHistory")
+        print("Repair History • |cFF00FF00Minimap button locked in place.|r")
+    else
+        LDBIcon:Unlock("RepairHistory")
+        print("Repair History • |cFF00FF00Minimap button is now draggable.|r")
     end
 end
 
@@ -231,11 +251,12 @@ function addon:ShareRepairData()
 
 -- Show help
 function addon:ShowHelp()
-    print("|cFF00FF00[Repair History Commands]|r" .. " |cFFB0B0B0- Version: 0.0.1|r")
+    print("|cFF00FF00[Repair History Commands]|r" .. " |cFFB0B0B0- Version: 1.0.0|r")
     print("|cFFFFD700/rh|r - Show repair cost data.")
     print("|cFFFFD700/rh charclear|r - Reset character repair data.")
     print("|cFFFFD700/rh accountclear|r - Reset and erases all repair data.")
     print("|cFFFFD700/rh minimap|r - Toggle minimap icon visibility.")
+    print("|cFFFFD700/rh lock|r - Lock or unlock minimap button movement.")
     print("|cFFFFD700/rh help|r - Show this help message.")
 end
 
@@ -280,5 +301,9 @@ SlashCmdList["REPAIRHISTORY"] = function(msg)
         addon:ShowHelp()
     elseif cmd == "share" then
         addon:ShareRepairData()
+    elseif cmd == "lock" then
+        addon:ToggleMinimapLock()
+    else
+        print("Repair History • |cFFB0B0B0Invalid command. \nPlease type </rh help> for a list of commands.|r")
     end
 end
