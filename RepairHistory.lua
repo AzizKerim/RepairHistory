@@ -213,17 +213,31 @@ function addon:ShowRepairData()
     print("|cFFFFD700Account-Wide Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryDB.accountWideRepairCost))
 end
 
--- Function to get the active channel based on group context
-function addon:GetActiveChannel()
-    -- Check if the player is in a raid group (highest priority)
-    if IsInRaid() then
-        return "RAID"   -- Send to Raid if in a raid group
-    -- Check if the player is in a party (next priority)
-    elseif IsInGroup(LE_PARTY_CATEGORY_HOME) then
-        return "PARTY"  -- Send to Party if in a party
-    else
-        return "SAY"    -- Fallback to Say if not in a party or raid
+-- Function to get the player's currently selected chat channel
+function addon:GetCurrentChannel()
+    -- Get the currently selected chat type from the chat frame
+    local chatType = ChatFrame1.editBox:GetAttribute("chatType")
+    local chatTarget = ChatFrame1.editBox:GetAttribute("channelTarget")
+    
+    -- Convert chat types to their proper channel identifiers
+    local channelMap = {
+        SAY = "SAY",
+        YELL = "YELL",
+        PARTY = "PARTY",
+        RAID = "RAID",
+        GUILD = "GUILD",
+        OFFICER = "OFFICER",
+        WHISPER = "WHISPER",
+        CHANNEL = "CHANNEL",
+    }
+    
+    -- If it's a numbered channel, return the channel number
+    if chatType == "CHANNEL" then
+        return "CHANNEL", chatTarget
     end
+    
+    -- Return the mapped channel type
+    return channelMap[chatType] or "SAY"  -- Default to SAY if no valid channel is found
 end
 
 -- Share repair data
@@ -232,21 +246,25 @@ function addon:ShareRepairData()
     local headerText = "===== Repair History [ " .. charName .. " ] ====="
     local messages = {
         headerText,
-            "Daily Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.dailyRepairCost),
-            "Weekly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.weeklyRepairCost),
-            "Monthly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.monthlyRepairCost),
-            "Lifetime: " .. FormatMoneyAsText(RepairHistoryCharDB.lifetimeRepairCost),
-            "Account-Wide: " .. FormatMoneyAsText(RepairHistoryDB.accountWideRepairCost),
-        }
+        "Daily Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.dailyRepairCost),
+        "Weekly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.weeklyRepairCost),
+        "Monthly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.monthlyRepairCost),
+        "Lifetime: " .. FormatMoneyAsText(RepairHistoryCharDB.lifetimeRepairCost),
+        "Account-Wide: " .. FormatMoneyAsText(RepairHistoryDB.accountWideRepairCost),
+    }
     
-    -- Get the active channel using the addon's method
-    local targetChannel = self:GetActiveChannel()
-        
+    -- Get the current channel and target (if any)
+    local channelType, channelTarget = self:GetCurrentChannel()
+    
     -- Send the messages to the selected channel
     for _, msg in ipairs(messages) do
-        SendChatMessage(msg, targetChannel)
+        if channelType == "CHANNEL" then
+            SendChatMessage(msg, channelType, nil, channelTarget)
+        else
+            SendChatMessage(msg, channelType)
+        end
     end
-    end
+end
 
 
 -- Show help
