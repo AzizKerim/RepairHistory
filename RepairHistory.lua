@@ -168,34 +168,84 @@ end
         end
     end
 
+    local currentInstanceName = nil -- Store the name of the current raid instance
+
+    -- Event handler for entering and leaving instances
+local function CheckInstanceStatus()
+    local inInstance, instanceType = IsInInstance()
+    if inInstance and instanceType == "raid" then
+        local instanceName = GetInstanceInfo()
+        if currentInstanceName ~= instanceName then
+            currentInstanceName = instanceName
+            RepairHistoryCharDB.raidRepairCost = 0 -- Reset the raid repair cost for the new instance
+        end
+    else
+        currentInstanceName = nil -- Clear the instance name when leaving
+        RepairHistoryCharDB.raidRepairCost = nil -- Clear raid repair costs
+    end
+end
+
+
 -- Event handler
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("MERCHANT_SHOW")
+frame:RegisterEvent("MERCHANT_CLOSED")
+frame:RegisterEvent("PLAYER_MONEY")
+
+local playerMoney = 0
+local atRepairMerchant = false
+local repairAllCost = 0
+
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(_, event, ...)
     if event == "PLAYER_LOGIN" then
         addon:OnInitialize()
+        playerMoney = GetMoney()
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        CheckInstanceStatus()
     elseif event == "MERCHANT_SHOW" then
+        playerMoney = GetMoney()
         if CanMerchantRepair() then
-            local repairCost = GetRepairAllCost()
-            if repairCost and repairCost > 0 then
-                -- Call the reset functions to check if any reset is needed
-                CheckDailyReset()
-                CheckWeeklyReset()
-                CheckMonthlyReset()
-
-                RepairHistoryCharDB.dailyRepairCost = RepairHistoryCharDB.dailyRepairCost + repairCost
-                RepairHistoryCharDB.weeklyRepairCost = RepairHistoryCharDB.weeklyRepairCost + repairCost
-                RepairHistoryCharDB.monthlyRepairCost = RepairHistoryCharDB.monthlyRepairCost + repairCost
-                RepairHistoryCharDB.lifetimeRepairCost = RepairHistoryCharDB.lifetimeRepairCost + repairCost
-                RepairHistoryDB.accountWideRepairCost = RepairHistoryDB.accountWideRepairCost + repairCost
-                C_Timer.After(1, function()
-                print("|cFF00FF00Daily Repair Total:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.dailyRepairCost))
-            end )
+            atRepairMerchant = true
+            repairAllCost = GetRepairAllCost()
         end
+    elseif event == "MERCHANT_CLOSED" then
+        atRepairMerchant = false
+        repairAllCost = 0
+        playerMoney = GetMoney()
+    elseif event == "PLAYER_MONEY" and atRepairMerchant then
+        local newMoney = GetMoney()
+        if newMoney < playerMoney then
+            local moneySpent = playerMoney - newMoney
+
+            -- Track the repair
+            CheckDailyReset()
+            CheckWeeklyReset()
+            CheckMonthlyReset()
+
+            RepairHistoryCharDB.dailyRepairCost = RepairHistoryCharDB.dailyRepairCost + moneySpent
+            RepairHistoryCharDB.weeklyRepairCost = RepairHistoryCharDB.weeklyRepairCost + moneySpent
+            RepairHistoryCharDB.monthlyRepairCost = RepairHistoryCharDB.monthlyRepairCost + moneySpent
+            RepairHistoryCharDB.lifetimeRepairCost = RepairHistoryCharDB.lifetimeRepairCost + moneySpent
+            RepairHistoryDB.accountWideRepairCost = RepairHistoryDB.accountWideRepairCost + moneySpent
+
+            -- Track raid-specific repair costs
+            if currentInstanceName then
+                RepairHistoryCharDB.raidRepairCost = (RepairHistoryCharDB.raidRepairCost or 0) + moneySpent
+                print("[" .. currentInstanceName .. "] |cFF00FF00Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.raidRepairCost))
+            end
+
+            -- Print the message
+            print("|cFF00FF00Daily Repair Total:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.dailyRepairCost))
+        end
+
+        -- Update money and repair cost tracking
+        playerMoney = newMoney
+        repairAllCost = GetRepairAllCost()
     end
-end
 end)
+
 
 -- Show repair data
 function addon:ShowRepairData()
@@ -204,9 +254,12 @@ function addon:ShowRepairData()
     CheckMonthlyReset()
 
     local charName = GetCharacterName()
-    
+
     print("|cFF00FF00===== Repair History|r [ " .. charName .. " ] |cFF00FF00=====|r")
     print("|cFFFFD700Daily Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.dailyRepairCost))
+    if currentInstanceName and RepairHistoryCharDB.raidRepairCost then
+        print("[" .. currentInstanceName .. "] |cFFFFD700Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.raidRepairCost))
+    end
     print("|cFFFFD700Weekly Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.weeklyRepairCost))
     print("|cFFFFD700Monthly Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.monthlyRepairCost))
     print("|cFFFFD700Lifetime Repair Cost:|r " .. FormatMoneyWithIcons(RepairHistoryCharDB.lifetimeRepairCost))
@@ -247,23 +300,32 @@ function addon:ShareRepairData()
     local messages = {
         headerText,
         "Daily Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.dailyRepairCost),
-        "Weekly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.weeklyRepairCost),
-        "Monthly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.monthlyRepairCost),
-        "Lifetime: " .. FormatMoneyAsText(RepairHistoryCharDB.lifetimeRepairCost),
-        "Account-Wide: " .. FormatMoneyAsText(RepairHistoryDB.accountWideRepairCost),
     }
-    
+
+    if currentInstanceName and RepairHistoryCharDB.raidRepairCost then
+        table.insert(messages, "[" .. currentInstanceName .. "] Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.raidRepairCost))
+    end
+
+    table.insert(messages, "Weekly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.weeklyRepairCost))
+    table.insert(messages, "Monthly Repair: " .. FormatMoneyAsText(RepairHistoryCharDB.monthlyRepairCost))
+    table.insert(messages, "Lifetime: " .. FormatMoneyAsText(RepairHistoryCharDB.lifetimeRepairCost))
+    table.insert(messages, "Account-Wide: " .. FormatMoneyAsText(RepairHistoryDB.accountWideRepairCost))
+
     -- Get the current channel and target (if any)
     local channelType, channelTarget = self:GetCurrentChannel()
-    
-    -- Send the messages to the selected channel
-    for _, msg in ipairs(messages) do
-        if channelType == "CHANNEL" then
+
+    -- Send messages sequentially
+    local function sendNextMessage()
+        local msg = table.remove(messages, 1) 
+        if msg ~= "" then -- Skip empty messages
             SendChatMessage(msg, channelType, nil, channelTarget)
-        else
-            SendChatMessage(msg, channelType)
+            if #messages > 0 then -- If there are more messages to send
+                C_Timer.After(0.05, sendNextMessage) -- Schedule the next message after a very short delay
+            end
         end
     end
+
+    sendNextMessage()
 end
 
 
