@@ -295,6 +295,11 @@ end
 
 -- Share repair data
 function addon:ShareRepairData()
+    if InCombatLockdown() then
+        print("Cannot send repair data during combat.")
+        return
+    end
+
     local charName = GetCharacterName()
     local headerText = "===== Repair History [ " .. charName .. " ] ====="
     local messages = {
@@ -311,21 +316,12 @@ function addon:ShareRepairData()
     table.insert(messages, "Lifetime: " .. FormatMoneyAsText(RepairHistoryCharDB.lifetimeRepairCost))
     table.insert(messages, "Account-Wide: " .. FormatMoneyAsText(RepairHistoryDB.accountWideRepairCost))
 
-    -- Get the current channel and target (if any)
     local channelType, channelTarget = self:GetCurrentChannel()
 
-    -- Send messages sequentially
-    local function sendNextMessage()
-        local msg = table.remove(messages, 1) 
-        if msg ~= "" then -- Skip empty messages
-            SendChatMessage(msg, channelType, nil, channelTarget)
-            if #messages > 0 then -- If there are more messages to send
-                C_Timer.After(0.05, sendNextMessage) -- Schedule the next message after a very short delay
-            end
-        end
+    -- Send all messages in a single loop
+    for _, msg in ipairs(messages) do
+        SendChatMessage(msg, channelType, nil, channelTarget)
     end
-
-    sendNextMessage()
 end
 
 
