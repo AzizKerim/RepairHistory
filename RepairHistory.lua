@@ -31,29 +31,29 @@ local dataobj = LDB:NewDataObject("RepairHistory", {
         return UnitName("player")
     end
 
--- Helper function to format money with coin icons
-local function FormatMoneyWithIcons(money)
-    if not money then return "0" end
-    local gold = floor(money / 10000)
-    local silver = floor((money % 10000) / 100)
-    local copper = money % 100
-    local TEXT_GOLD = "|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t"
-    local TEXT_SILVER = "|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t"
-    local TEXT_COPPER = "|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t"
-
-    local text = ""
-    if gold > 0 then
-        text = text .. gold .. TEXT_GOLD .. " "
+    local function FormatMoneyWithIcons(money)
+        if not money then return "0" end
+        local gold = floor(money / 10000)
+        local silver = floor((money % 10000) / 100)
+        local copper = money % 100
+        local TEXT_GOLD = "|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t"
+        local TEXT_SILVER = "|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t"
+        local TEXT_COPPER = "|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t"
+    
+        local text = ""
+        if gold > 0 then
+            -- Format gold with thousands separators
+            text = text .. string.gsub(tostring(gold), "(%d)(%d%d%d)$", "%1,%2"):gsub("(%d)(%d%d%d),", "%1,%2,") .. TEXT_GOLD .. " "
+        end
+        if silver > 0 or gold > 0 then
+            text = text .. silver .. TEXT_SILVER .. " "
+        end
+        text = text .. copper .. TEXT_COPPER
+    
+        return text
     end
-    if silver > 0 or gold > 0 then
-        text = text .. silver .. TEXT_SILVER .. " "
-    end
-    text = text .. copper .. TEXT_COPPER
-
-    return text
-end
-
--- Helper function to format money as strings (gold, silver, copper) / This is mainly for rh share.
+    
+    -- Helper function to format money as strings (gold, silver, copper)
     local function FormatMoneyAsText(money)
         if not money then return "0c" end
         local gold = floor(money / 10000)
@@ -62,7 +62,8 @@ end
     
         local text = ""
         if gold > 0 then
-            text = text .. gold .. "g "
+            -- Format gold with thousands separators
+            text = text .. string.gsub(tostring(gold), "(%d)(%d%d%d)$", "%1,%2"):gsub("(%d)(%d%d%d),", "%1,%2,") .. "g "
         end
         if silver > 0 or gold > 0 then
             text = text .. silver .. "s "
@@ -327,7 +328,7 @@ end
 
 -- Show help
 function addon:ShowHelp()
-    print("|cFF00FF00[Repair History Commands]|r" .. " |cFFB0B0B0- Version: 1.0.0|r")
+    print("|cFF00FF00[Repair History Commands]|r" .. " |cFFB0B0B0- Version: 1.0.5|r")
     print("|cFFFFD700/rh|r - Show repair cost data.")
     print("|cFFFFD700/rh charclear|r - Reset character repair data.")
     print("|cFFFFD700/rh accountclear|r - Reset and erases all repair data.")
